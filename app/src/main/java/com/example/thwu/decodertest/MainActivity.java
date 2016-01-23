@@ -3,11 +3,10 @@ package com.example.thwu.decodertest;
 import android.app.Activity;
 import android.media.MediaFormat;
 import android.opengl.GLSurfaceView;
-import android.os.Handler;
-import android.os.Message;
+import android.os.*;
+import android.os.Process;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.media.MediaCodec;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -110,13 +109,34 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback{
                             if (outputBufferIndex >= 0) {
                                 co++;
                                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, true);
-                                handler.sendMessage(handler.obtainMessage(SHOWTOAST, "Decoded frame number: " + co + " And queued frame: " + c));
+                                //handler.sendMessage(handler.obtainMessage(SHOWTOAST, "Decoded frame number: " + co + " And queued frame: " + c));
                             }
                         }
                     }
                 }
             }
         }.start();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        android.os.Process.killProcess(Process.myPid());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
