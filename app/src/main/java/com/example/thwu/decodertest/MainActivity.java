@@ -13,6 +13,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -22,7 +23,10 @@ import java.util.Arrays;
 
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener{
 
+    private Handler handlerTimer = new Handler();
+
     private TextureView mSurfaceView;
+    private TextView mTextView;
     int width = 960;
     int height = 540;
     String videoFormat = "video/avc";
@@ -33,6 +37,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean start = false;
     int c = 0;
     int co = 0;
+    long presen_time = 0;
+    int i = 0;
 
     private MediaCodec mMediaCodec;
     private byte[] iframe = new byte[781];
@@ -54,6 +60,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         setContentView(R.layout.activity_main);
 
         mSurfaceView = (TextureView) findViewById(R.id.surface_view);
+        mTextView = (TextView) findViewById(R.id.textView);
 
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
 
@@ -86,25 +93,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             public void run(){
                 while(!seq_start){}
 
-                for (int i=0; i<stream.length-7;i++){
-                    if (stream[i]==0x00 && stream[i+1]==0x00 && stream[i+2]==0x00 && stream[i+4]==0x09){
-                        if (!start){
+                for (int i=0; i<stream.length-7;i++) {
+                    if (stream[i] == 0x00 && stream[i + 1] == 0x00 && stream[i + 2] == 0x00 && stream[i + 4] == 0x09) {
+                        if (!start) {
                             start = true;
                             s = i;
                             i = i + 5;
-                        }
-                        else{
+                        } else {
                             inIndex = mMediaCodec.dequeueInputBuffer(0);
-                            if (inIndex > 0){
+                            if (inIndex > 0) {
                                 ByteBuffer inputBuffer = mMediaCodec.getInputBuffer(inIndex);
-                                inputBuffer.put(Arrays.copyOfRange(stream,s,i), 0, i-s);
+                                inputBuffer.put(Arrays.copyOfRange(stream, s, i), 0, i - s);
                                 mMediaCodec.queueInputBuffer(inIndex, 0, i - s, 0, 0);
                                 s = i;
                                 i = i + 5;
                                 c++;
                                 //handler.sendMessage(handler.obtainMessage(SHOWTOAST, "Queued frame num: " + c));
-                            }
-                            else
+                            } else
                                 i--;
 
                             MediaCodec.BufferInfo bufferinfo = new MediaCodec.BufferInfo();
@@ -113,6 +118,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                             if (outputBufferIndex >= 0) {
                                 co++;
                                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, true);
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // This code will always run on the UI thread, therefore is safe to modify UI elements.
+                                        mTextView.setText(String.valueOf(co));
+                                    }
+                                });
+                                try {
+                                    Thread.sleep(40);
+                                }
+                                catch (Exception e){
+                                    e.printStackTrace();
+                                }
                                 //handler.sendMessage(handler.obtainMessage(SHOWTOAST, "Decoded frame number: " + co + " And queued frame: " + c));
                             }
                         }
