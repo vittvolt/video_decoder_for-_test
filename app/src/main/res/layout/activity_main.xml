@@ -15,7 +15,7 @@
         android:text="Hello World!"
         android:id="@+id/textView" />
 
-    <android.view.SurfaceView
+    <android.view.TextureView
         android:id="@+id/surface_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"

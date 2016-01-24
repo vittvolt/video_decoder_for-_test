@@ -1,6 +1,7 @@
 package com.example.thwu.decodertest;
 
 import android.app.Activity;
+import android.graphics.SurfaceTexture;
 import android.media.MediaFormat;
 import android.opengl.GLSurfaceView;
 import android.os.*;
@@ -8,8 +9,10 @@ import android.os.Process;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.media.MediaCodec;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -17,9 +20,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class MainActivity extends Activity implements SurfaceHolder.Callback{
+public class MainActivity extends Activity implements TextureView.SurfaceTextureListener{
 
-    private SurfaceView mSurfaceView;
+    private TextureView mSurfaceView;
     int width = 960;
     int height = 540;
     String videoFormat = "video/avc";
@@ -50,7 +53,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mSurfaceView = (SurfaceView) findViewById(R.id.surface_view);
+        mSurfaceView = (TextureView) findViewById(R.id.surface_view);
 
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
 
@@ -76,7 +79,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback{
         }
 
         format.setString("KEY_MIME", videoFormat);
-        mSurfaceView.getHolder().addCallback(this);
+        //mSurfaceView.getHolder().addCallback(this);
+        mSurfaceView.setSurfaceTextureListener(this);
 
         new Thread(){
             public void run(){
@@ -139,10 +143,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback{
         super.onStop();
     }
 
-    public void surfaceCreated(SurfaceHolder holder) {
+    @Override
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         try {
             mMediaCodec = MediaCodec.createDecoderByType(videoFormat);
-            mMediaCodec.configure(format, mSurfaceView.getHolder().getSurface(), null, 0);
+            mMediaCodec.configure(format, new Surface(surface), null, 0);
             mMediaCodec.start();
 
             new Thread() {
@@ -163,11 +168,29 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback{
         }
     }
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h){
+    @Override
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        // TODO Auto-generated method stub
+
+    }
+
+    /*public void surfaceChanged(SurfaceHolder holder, int format, int w, int h){
 
     }
 
     public void surfaceDestroyed(SurfaceHolder holder){
 
-    }
+    }  */
 }
