@@ -1,6 +1,7 @@
 package com.example.thwu.decodertest;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.media.MediaFormat;
 import android.opengl.GLSurfaceView;
@@ -9,12 +10,20 @@ import android.os.Process;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.media.MediaCodec;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -22,6 +31,26 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener{
+
+    private static final String  TAG              = "OCVSample::Activity";
+    /*static{
+        System.loadLibrary("opencv_java3");
+    } */
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Log.i(TAG, "OpenCV loaded successfully");
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
 
     private Handler handlerTimer = new Handler();
 
@@ -57,6 +86,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
         mSurfaceView = (TextureView) findViewById(R.id.surface_view);
@@ -127,7 +157,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                                     }
                                 });
                                 try {
-                                    Thread.sleep(40);
+                                    Thread.sleep(20);
                                 }
                                 catch (Exception e){
                                     e.printStackTrace();
@@ -144,6 +174,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override
     protected void onResume(){
         super.onResume();
+        if (!OpenCVLoader.initDebug()) {
+            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Log.d(TAG, "OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override
@@ -202,7 +239,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         // TODO Auto-generated method stub
-
+        Bitmap frame_bmp = mSurfaceView.getBitmap();
+        Mat frame_mat = new Mat();
+        Utils.bitmapToMat(frame_bmp,frame_mat);
     }
 
     /*public void surfaceChanged(SurfaceHolder holder, int format, int w, int h){
