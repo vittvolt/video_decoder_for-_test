@@ -2,6 +2,8 @@ package com.example.thwu.decodertest;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.media.MediaFormat;
 import android.opengl.GLSurfaceView;
@@ -55,6 +57,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private Handler handlerTimer = new Handler();
 
     private TextureView mSurfaceView;
+    private TextureView mSurfaceView_Display;
     private TextView mTextView;
     int width = 960;
     int height = 540;
@@ -90,6 +93,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         setContentView(R.layout.activity_main);
 
         mSurfaceView = (TextureView) findViewById(R.id.surface_view);
+        mSurfaceView_Display = (TextureView) findViewById(R.id.view02);
+        //mSurfaceView = new TextureView(this);
         mTextView = (TextView) findViewById(R.id.textView);
 
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
@@ -241,7 +246,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         // TODO Auto-generated method stub
         Bitmap frame_bmp = mSurfaceView.getBitmap();
         Mat frame_mat = new Mat();
-        Utils.bitmapToMat(frame_bmp,frame_mat);
+        Utils.bitmapToMat(frame_bmp, frame_mat);
+
+        Utils.matToBitmap(frame_mat, frame_bmp);
+        Canvas canvas = mSurfaceView_Display.lockCanvas();
+        canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+        canvas.drawBitmap(frame_bmp, new Rect(0, 0, frame_bmp.getWidth(), frame_bmp.getHeight()),
+                new Rect((canvas.getWidth() - frame_bmp.getWidth()) / 2,
+                        (canvas.getHeight() - frame_bmp.getHeight()) / 2,
+                        (canvas.getWidth() - frame_bmp.getWidth()) / 2 + frame_bmp.getWidth(),
+                        (canvas.getHeight() - frame_bmp.getHeight()) / 2 + frame_bmp.getHeight()), null);
+        mSurfaceView_Display.unlockCanvasAndPost(canvas);
     }
 
     /*public void surfaceChanged(SurfaceHolder holder, int format, int w, int h){
