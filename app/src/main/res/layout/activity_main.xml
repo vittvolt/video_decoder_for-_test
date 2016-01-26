@@ -19,15 +19,13 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:id="@+id/view02"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/textView"
-        android:layout_marginBottom="132dp" />
+        android:layout_below="@+id/textView"
+        android:layout_alignParentEnd="true" />
 
     <android.view.TextureView
         android:id="@+id/surface_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_marginTop="154dp"
         android:layout_below="@+id/textView"
         android:layout_alignParentStart="true" />
 </RelativeLayout>
