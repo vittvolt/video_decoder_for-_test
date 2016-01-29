@@ -27,6 +27,9 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -34,6 +37,16 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener{
+
+    //Color blob detection variables
+    private boolean              mIsColorSelected = false;
+    private Mat                  mRgba;
+    private Scalar mBlobColorRgba;
+    private Scalar               mBlobColorHsv;
+    private ColorBlobDetector    mDetector;
+    private Mat                  mSpectrum;
+    private Size SPECTRUM_SIZE;
+    private Scalar               CONTOUR_COLOR;
 
     private static final String  TAG              = "OCVSample::Activity";
     /*static{
@@ -72,6 +85,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     int co = 0;
     long presen_time = 0;
     int i = 0;
+    int step_count = 0;
 
     private MediaCodec mMediaCodec;
     private byte[] iframe = new byte[781];
@@ -163,7 +177,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                                     }
                                 });
                                 try {
-                                    Thread.sleep(20);
+                                    Thread.sleep(45);
                                 }
                                 catch (Exception e){
                                     e.printStackTrace();
@@ -245,9 +259,19 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         // TODO Auto-generated method stub
+        if (step_count != 2){
+            step_count++;
+            return;
+        }
+        else{
+            step_count = 0;
+        }
+
         Bitmap frame_bmp = mSurfaceView.getBitmap();
         Mat frame_mat = new Mat();
         Utils.bitmapToMat(frame_bmp, frame_mat);
+
+        //Todo: Do image processing stuff here
 
         Utils.matToBitmap(frame_mat, frame_bmp);
         Canvas canvas = mSurfaceView_Display.lockCanvas();
