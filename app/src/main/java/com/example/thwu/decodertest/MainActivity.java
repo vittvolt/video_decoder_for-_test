@@ -121,6 +121,8 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
         mTextView = (TextView) findViewById(R.id.textView);
         mTextView02 = (TextView) findViewById(R.id.textView02);
 
+        mSurfaceView_Display.setOnTouchListener(this);
+
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
 
         BufferedInputStream buf = new BufferedInputStream(is);
@@ -238,8 +240,6 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
         mBlobColorHsv = new Scalar(255);
         SPECTRUM_SIZE = new Size(200, 64);
         CONTOUR_COLOR = new Scalar(255,0,0,255);
-
-        mSurfaceView_Display.setOnTouchListener(this);
 
         try {
             mMediaCodec = MediaCodec.createDecoderByType(videoFormat);
