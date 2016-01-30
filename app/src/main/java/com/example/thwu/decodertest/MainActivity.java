@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.media.MediaCodec;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -21,22 +22,29 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.View.OnTouchListener;
+
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
-public class MainActivity extends Activity implements TextureView.SurfaceTextureListener{
+public class MainActivity extends Activity implements OnTouchListener, TextureView.SurfaceTextureListener{
 
     //Color blob detection variables
     private boolean              mIsColorSelected = false;
@@ -72,7 +80,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     private TextureView mSurfaceView;
     private TextureView mSurfaceView_Display;
-    private TextView mTextView;
+    private TextView mTextView, mTextView02;
     int width = 960;
     int height = 540;
     String videoFormat = "video/avc";
@@ -111,6 +119,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         mSurfaceView_Display = (TextureView) findViewById(R.id.view02);
         //mSurfaceView = new TextureView(this);
         mTextView = (TextView) findViewById(R.id.textView);
+        mTextView02 = (TextView) findViewById(R.id.textView02);
 
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
 
@@ -221,6 +230,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        //Detector Init
+        mRgba = new Mat();
+        mDetector = new ColorBlobDetector();
+        mSpectrum = new Mat();
+        mBlobColorRgba = new Scalar(255);
+        mBlobColorHsv = new Scalar(255);
+        SPECTRUM_SIZE = new Size(200, 64);
+        CONTOUR_COLOR = new Scalar(255,0,0,255);
+
+        mSurfaceView_Display.setOnTouchListener(this);
+
         try {
             mMediaCodec = MediaCodec.createDecoderByType(videoFormat);
             mMediaCodec.configure(format, new Surface(surface), null, 0);
@@ -268,12 +288,37 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
 
         Bitmap frame_bmp = mSurfaceView.getBitmap();
-        Mat frame_mat = new Mat();
-        Utils.bitmapToMat(frame_bmp, frame_mat);
+        //Mat frame_mat = new Mat();
+        Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
 
         //Todo: Do image processing stuff here
+        mRgba.convertTo(mRgba,-1,2,0);
 
-        Utils.matToBitmap(frame_mat, frame_bmp);
+        if (mIsColorSelected) {
+            //Show the error-corrected color
+            mBlobColorHsv = mDetector.get_new_hsvColor();
+            mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
+
+            //Debug
+            Log.i(TAG, "mDetector rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
+                    ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
+            Log.i(TAG, "mDetector hsv color: (" + mBlobColorHsv.val[0] + ", " + mBlobColorHsv.val[1] +
+                    ", " + mBlobColorHsv.val[2] + ", " + mBlobColorHsv.val[3] + ")");
+
+            mDetector.process(mRgba);
+            List<MatOfPoint> contours = mDetector.getContours();
+            Log.e(TAG, "Contours count: " + contours.size());
+            Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR,2);
+
+            Mat colorLabel = mRgba.submat(4, 68, 4, 68);
+            colorLabel.setTo(mBlobColorRgba);
+
+            Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
+            mSpectrum.copyTo(spectrumLabel);
+        }
+
+
+        Utils.matToBitmap(mRgba, frame_bmp);
         Canvas canvas = mSurfaceView_Display.lockCanvas();
         canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
         canvas.drawBitmap(frame_bmp, new Rect(0, 0, frame_bmp.getWidth(), frame_bmp.getHeight()),
@@ -284,11 +329,71 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         mSurfaceView_Display.unlockCanvasAndPost(canvas);
     }
 
-    /*public void surfaceChanged(SurfaceHolder holder, int format, int w, int h){
+    public boolean onTouch(View v, MotionEvent event) {
+        //Todo: to give a notification for debugging
+        mTextView02.setText("Touched!!!");
 
+        //Very important! So that the onFrame function won't change the parameters before this section finishes
+        mIsColorSelected = false;
+
+        int rows = mRgba.rows();        int cols = mRgba.cols();
+
+
+        int xOffset = (mSurfaceView_Display.getWidth() - cols) / 2;
+        int yOffset = (mSurfaceView_Display.getHeight() - rows) / 2;
+
+        int x = (int)event.getX() - xOffset;
+        int y = (int)event.getY() - yOffset;
+
+        Log.i(TAG, "Touch image coordinates: (" + x + ", " + y + ")");
+
+        if ((x < 0) || (y < 0) || (x > cols) || (y > rows)) return false;
+
+        org.opencv.core.Rect touchedRect = new org.opencv.core.Rect();
+
+        touchedRect.x = (x>4) ? x-4 : 0;
+        touchedRect.y = (y>4) ? y-4 : 0;
+
+        touchedRect.width = (x+4 < cols) ? x + 4 - touchedRect.x : cols - touchedRect.x;
+        touchedRect.height = (y+4 < rows) ? y + 4 - touchedRect.y : rows - touchedRect.y;
+
+        Mat touchedRegionRgba = mRgba.submat(touchedRect);
+
+        Mat touchedRegionHsv = new Mat();
+        Imgproc.cvtColor(touchedRegionRgba, touchedRegionHsv, Imgproc.COLOR_RGB2HSV_FULL);
+
+        // Calculate average color of touched region
+        mBlobColorHsv = Core.sumElems(touchedRegionHsv);
+        int pointCount = touchedRect.width*touchedRect.height;
+        for (int i = 0; i < mBlobColorHsv.val.length; i++)
+            mBlobColorHsv.val[i] /= pointCount;
+
+        mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
+
+        Log.i(TAG, "Touched rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
+                ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
+
+        mDetector.resetStart();
+        mDetector.setHsvColor(mBlobColorHsv);
+
+        Log.i(TAG, "mDetector hsv color set: (" + mBlobColorHsv.val[0] + ", " + mBlobColorHsv.val[1] +
+                ", " + mBlobColorHsv.val[2] + ", " + mBlobColorHsv.val[3] + ")");
+
+        Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE);
+
+        mIsColorSelected = true;
+
+        touchedRegionRgba.release();
+        touchedRegionHsv.release();
+
+        return false;
     }
 
-    public void surfaceDestroyed(SurfaceHolder holder){
+    private Scalar converScalarHsv2Rgba(Scalar hsvColor) {
+        Mat pointMatRgba = new Mat();
+        Mat pointMatHsv = new Mat(1, 1, CvType.CV_8UC3, hsvColor);
+        Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
 
-    }  */
+        return new Scalar(pointMatRgba.get(0, 0));
+    }
 }

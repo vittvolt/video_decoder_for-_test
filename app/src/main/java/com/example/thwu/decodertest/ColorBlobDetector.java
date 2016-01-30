@@ -18,6 +18,8 @@ public class ColorBlobDetector {
     // Lower and Upper bounds for range checking in HSV color space
     private Scalar mLowerBound = new Scalar(0);
     private Scalar mUpperBound = new Scalar(0);
+    private Scalar min_hsvColor = new Scalar(0);
+    private Scalar max_hsvColor = new Scalar(0);
     // Minimum contour area in percent for contours filtering
     private static double mMinContourArea = 0.1;
     // Color radius for range checking in HSV color space
@@ -66,6 +68,12 @@ public class ColorBlobDetector {
 
         mLowerBound.val[3] = 0;
         mUpperBound.val[3] = 255;
+
+        //Set max and min bounding condition, so that the color won't change too much
+        for (int i=0;i<4;i++){
+            min_hsvColor.val[i] = mLowerBound.val[i];
+            max_hsvColor.val[i] = mUpperBound.val[i];
+        }
 
         Mat spectrumHsv = new Mat(1, (int)(maxH-minH), CvType.CV_8UC3);
 
@@ -167,6 +175,13 @@ public class ColorBlobDetector {
                 }
 
                 // Update the parameters
+                for (int i=0;i<3;i++){
+                    if (new_hsvColor.val[i] > max_hsvColor.val[i]) //Limit the bounding condition
+                        new_hsvColor.val[i] = max_hsvColor.val[i];
+                    if (new_hsvColor.val[i] < min_hsvColor.val[i])
+                        new_hsvColor.val[i] = min_hsvColor.val[i];
+                }
+
                 mLowerBound.val[0] = (new_hsvColor.val[0] >= mColorRadius.val[0]) ? new_hsvColor.val[0]-mColorRadius.val[0] : 0;
                 mUpperBound.val[0] = (new_hsvColor.val[0]+mColorRadius.val[0] <= 255) ? new_hsvColor.val[0]+mColorRadius.val[0] : 255;
 
