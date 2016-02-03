@@ -279,54 +279,58 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         // TODO Auto-generated method stub
-        if (step_count != 2){
-            step_count++;
-            return;
-        }
-        else{
-            step_count = 0;
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (step_count != 5){
+                    step_count++;
+                    return;
+                }
+                else{
+                    step_count = 0;
+                }
+                Bitmap frame_bmp = mSurfaceView.getBitmap();
+                //Mat frame_mat = new Mat();
+                Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
 
-        Bitmap frame_bmp = mSurfaceView.getBitmap();
-        //Mat frame_mat = new Mat();
-        Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
+                //Todo: Do image processing stuff here
+                mRgba.convertTo(mRgba,-1,2,0);  // Increase intensity by 2
 
-        //Todo: Do image processing stuff here
-        mRgba.convertTo(mRgba,-1,2,0);
+                if (mIsColorSelected) {
+                    //Show the error-corrected color
+                    mBlobColorHsv = mDetector.get_new_hsvColor();
+                    mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
 
-        if (mIsColorSelected) {
-            //Show the error-corrected color
-            mBlobColorHsv = mDetector.get_new_hsvColor();
-            mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
+                    //Debug
+                    Log.i(TAG, "mDetector rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
+                            ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
+                    Log.i(TAG, "mDetector hsv color: (" + mBlobColorHsv.val[0] + ", " + mBlobColorHsv.val[1] +
+                            ", " + mBlobColorHsv.val[2] + ", " + mBlobColorHsv.val[3] + ")");
 
-            //Debug
-            Log.i(TAG, "mDetector rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
-                    ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
-            Log.i(TAG, "mDetector hsv color: (" + mBlobColorHsv.val[0] + ", " + mBlobColorHsv.val[1] +
-                    ", " + mBlobColorHsv.val[2] + ", " + mBlobColorHsv.val[3] + ")");
+                    mDetector.process(mRgba);
+                    List<MatOfPoint> contours = mDetector.getContours();
+                    Log.e(TAG, "Contours count: " + contours.size());
+                    Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR,2);
 
-            mDetector.process(mRgba);
-            List<MatOfPoint> contours = mDetector.getContours();
-            Log.e(TAG, "Contours count: " + contours.size());
-            Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR,2);
+                    Mat colorLabel = mRgba.submat(4, 68, 4, 68);
+                    colorLabel.setTo(mBlobColorRgba);
 
-            Mat colorLabel = mRgba.submat(4, 68, 4, 68);
-            colorLabel.setTo(mBlobColorRgba);
-
-            Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
-            mSpectrum.copyTo(spectrumLabel);
-        }
+                    Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
+                    mSpectrum.copyTo(spectrumLabel);
+                }
 
 
-        Utils.matToBitmap(mRgba, frame_bmp);
-        Canvas canvas = mSurfaceView_Display.lockCanvas();
-        canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-        canvas.drawBitmap(frame_bmp, new Rect(0, 0, frame_bmp.getWidth(), frame_bmp.getHeight()),
-                new Rect((canvas.getWidth() - frame_bmp.getWidth()) / 2,
-                        (canvas.getHeight() - frame_bmp.getHeight()) / 2,
-                        (canvas.getWidth() - frame_bmp.getWidth()) / 2 + frame_bmp.getWidth(),
-                        (canvas.getHeight() - frame_bmp.getHeight()) / 2 + frame_bmp.getHeight()), null);
-        mSurfaceView_Display.unlockCanvasAndPost(canvas);
+                Utils.matToBitmap(mRgba, frame_bmp);
+                Canvas canvas = mSurfaceView_Display.lockCanvas();
+                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+                canvas.drawBitmap(frame_bmp, new Rect(0, 0, frame_bmp.getWidth(), frame_bmp.getHeight()),
+                        new Rect((canvas.getWidth() - frame_bmp.getWidth()) / 2,
+                                (canvas.getHeight() - frame_bmp.getHeight()) / 2,
+                                (canvas.getWidth() - frame_bmp.getWidth()) / 2 + frame_bmp.getWidth(),
+                                (canvas.getHeight() - frame_bmp.getHeight()) / 2 + frame_bmp.getHeight()), null);
+                mSurfaceView_Display.unlockCanvasAndPost(canvas);
+            }
+        }).start();
     }
 
     public boolean onTouch(View v, MotionEvent event) {
