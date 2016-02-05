@@ -278,7 +278,11 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        //Update and show the rectangle info
+        mTextView02.setText(String.valueOf(mDetector.get_rect_x()+mDetector.get_rect_width()/2) +", " + String.valueOf(mDetector.get_rect_y()+mDetector.get_rect_height()/2)+"  "+String.valueOf(mDetector.width)+", "+String.valueOf(mDetector.height));
+
         // TODO Auto-generated method stub
+        //Image processing thread
         new Thread(new Runnable() {
             @Override
             public void run() {

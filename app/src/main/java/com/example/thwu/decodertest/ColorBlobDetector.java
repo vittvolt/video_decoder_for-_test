@@ -15,6 +15,14 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ColorBlobDetector {
+
+    private int x = 0;
+    private int y = 0;
+    private int w = 0;
+    private int h = 0;
+    int width = 0;
+    int height = 0;
+
     // Lower and Upper bounds for range checking in HSV color space
     private Scalar mLowerBound = new Scalar(0);
     private Scalar mUpperBound = new Scalar(0);
@@ -151,6 +159,14 @@ public class ColorBlobDetector {
                 // draw enclosing rectangle (all same color, but you could use variable i to make them unique)
                 Imgproc.rectangle(original_frame, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(255, 0, 0, 255), 3);
 
+                //Update the location of the rectangle
+                x = rect.x;
+                y = rect.y;
+                w = rect.width;
+                h = rect.height;
+                width = original_frame.cols();
+                height = original_frame.rows();
+
                 //Todo: use the bounding rectangular to calculate average intensity (turn the pixels out of the contour to new_hsvColor)
                 //Just change the boundary values would be enough
                 bounding_rect_rgba = original_frame.submat(rect);
@@ -200,5 +216,21 @@ public class ColorBlobDetector {
 
     public Scalar get_new_hsvColor(){
         return new_hsvColor;
+    }
+
+    public int get_rect_x(){
+        return x;
+    }
+
+    public int get_rect_y(){
+        return y;
+    }
+
+    public int get_rect_width(){
+        return w;
+    }
+
+    public int get_rect_height(){
+        return h;
     }
 }
