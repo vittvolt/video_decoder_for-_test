@@ -39,12 +39,20 @@ import org.opencv.imgproc.Imgproc;
 import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends Activity implements OnTouchListener, TextureView.SurfaceTextureListener{
+
+    String eduroam_pc_ip = "10.89.131.94";
+    String myRouter_pc_ip = "192.168.1.101";
 
     //Color blob detection variables
     private boolean              mIsColorSelected = false;
@@ -293,12 +301,66 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
                 else{
                     step_count = 0;
                 }
+                //Variables for socket transmission
+                int i = 0;
+                DataOutputStream dos = null;
+
+                //Get bitmap
                 Bitmap frame_bmp = mSurfaceView.getBitmap();
-                //Mat frame_mat = new Mat();
-                Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
+
+                //Send the bitmap to PC
+                /*ByteBuffer b = ByteBuffer.allocate(frame_bmp.getByteCount());
+                frame_bmp.copyPixelsToBuffer(b);
+                byte[] byte_array = b.array();
+                InputStream is = new ByteArrayInputStream(byte_array);
+                BufferedInputStream bis = new BufferedInputStream(is); */
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                frame_bmp.compress(Bitmap.CompressFormat.JPEG, 50,stream);
+                byte[] byteArray = stream.toByteArray();
+                InputStream is = new ByteArrayInputStream(byteArray);
+                BufferedInputStream bis = new BufferedInputStream(is);
+
+                Socket socket = null;
+                try {
+                    socket = new Socket(eduroam_pc_ip, 8080);
+                    dos = new DataOutputStream(socket.getOutputStream());
+                    while ((i = bis.read()) > -1)
+                        dos.write(i);
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                finally{
+                    try{
+                        bis.close();
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
+                    if (dos != null){
+                        try{
+                            dos.flush();
+                            dos.close();
+                        }
+                        catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                    if (socket != null){
+                        try{
+                            socket.close();
+                        }
+                        catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+
+                //Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
 
                 //Todo: Do image processing stuff here
-                mRgba.convertTo(mRgba,-1,2,0);  // Increase intensity by 2
+                /*mRgba.convertTo(mRgba,-1,2,0);  // Increase intensity by 2
 
                 if (mIsColorSelected) {
                     //Show the error-corrected color
@@ -332,7 +394,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
                                 (canvas.getHeight() - frame_bmp.getHeight()) / 2,
                                 (canvas.getWidth() - frame_bmp.getWidth()) / 2 + frame_bmp.getWidth(),
                                 (canvas.getHeight() - frame_bmp.getHeight()) / 2 + frame_bmp.getHeight()), null);
-                mSurfaceView_Display.unlockCanvasAndPost(canvas);
+                mSurfaceView_Display.unlockCanvasAndPost(canvas); */
             }
         }).start();
     }
