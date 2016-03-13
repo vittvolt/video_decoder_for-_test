@@ -7,44 +7,28 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.thwu.decodertest.MainActivity">
+    tools:context="com.example.thwu.decodertest.Main2Activity">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!"
-        android:id="@+id/textView" />
+        android:id="@+id/main2_textView" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World 02!"
-        android:id="@+id/textView02"
+        android:id="@+id/main2_textView02"
         android:layout_alignParentTop="true"
         android:layout_toEndOf="@+id/textView"
         android:layout_marginStart="31dp" />
 
     <android.view.TextureView
-        android:id="@+id/surface_view"
+        android:id="@+id/main2_surfaceview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_toLeftOf="@+id/dummy"
         android:layout_alignParentLeft="true"
         android:layout_gravity = "center"
         android:layout_below="@+id/textView" />
-
-    <Space android:id="@+id/dummy"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_centerHorizontal="true"
-        android:visibility="invisible"/>
-
-    <android.view.TextureView
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:id="@+id/view02"
-        android:layout_toRightOf="@+id/dummy"
-        android:layout_alignParentRight="true"
-        android:layout_gravity = "center"
-        android:layout_below="@+id/textView02"/>
 </RelativeLayout>

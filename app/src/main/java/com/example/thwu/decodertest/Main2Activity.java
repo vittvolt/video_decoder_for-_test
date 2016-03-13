@@ -49,7 +49,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends Activity implements OnTouchListener, TextureView.SurfaceTextureListener{
+public class Main2Activity extends Activity implements OnTouchListener, TextureView.SurfaceTextureListener {
 
     String eduroam_pc_ip = "10.89.131.94";
     String myRouter_pc_ip = "192.168.1.101";
@@ -87,7 +87,6 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
     private Handler handlerTimer = new Handler();
 
     private TextureView mSurfaceView;
-    private TextureView mSurfaceView_Display;
     private TextView mTextView, mTextView02;
     int width = 960;
     int height = 540;
@@ -112,7 +111,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
-                Toast.makeText(MainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+            Toast.makeText(Main2Activity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
             return false;
         }
     });
@@ -121,14 +120,13 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
 
-        mSurfaceView = (TextureView) findViewById(R.id.surface_view);
-        mSurfaceView_Display = (TextureView) findViewById(R.id.view02);
-        mTextView = (TextView) findViewById(R.id.textView);
-        mTextView02 = (TextView) findViewById(R.id.textView02);
+        mSurfaceView = (TextureView) findViewById(R.id.main2_surfaceview);
+        mTextView = (TextView) findViewById(R.id.main2_textView);
+        mTextView02 = (TextView) findViewById(R.id.main2_textView02);
 
-        mSurfaceView_Display.setOnTouchListener(this);
+        mSurfaceView.setOnTouchListener(this);
 
         InputStream is = getResources().openRawResource(R.raw.iframe_1280_3s);
 
@@ -154,7 +152,6 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
         }
 
         format.setString("KEY_MIME", videoFormat);
-        //mSurfaceView.getHolder().addCallback(this);
         mSurfaceView.setSurfaceTextureListener(this);
 
         new Thread(){
@@ -293,7 +290,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (step_count != 3){
+                if (step_count != 4){
                     step_count++;
                     return;
                 }
@@ -301,8 +298,8 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
                     step_count = 0;
                 }
                 //Variables for socket transmission
-                //int i = 0;
-                //DataOutputStream dos = null;
+                int i = 0;
+                DataOutputStream dos = null;
 
                 //Get bitmap
                 Bitmap frame_bmp = mSurfaceView.getBitmap();
@@ -313,8 +310,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
                 byte[] byte_array = b.array();
                 InputStream is = new ByteArrayInputStream(byte_array);
                 BufferedInputStream bis = new BufferedInputStream(is); */
-
-                /*ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 frame_bmp.compress(Bitmap.CompressFormat.JPEG, 30,stream);
                 byte[] byteArray = stream.toByteArray();
                 InputStream is = new ByteArrayInputStream(byteArray);
@@ -322,7 +318,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
 
                 Socket socket = null;
                 try {
-                    socket = new Socket(myRouter_pc_ip, 8080);
+                    socket = new Socket(eduroam_pc_ip, 8080);
                     dos = new DataOutputStream(socket.getOutputStream());
                     while ((i = bis.read()) > -1)
                         dos.write(i);
@@ -354,47 +350,7 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
                             e.printStackTrace();
                         }
                     }
-                } */
-
-
-                Utils.bitmapToMat(frame_bmp, mRgba);  // frame_bmp is in ARGB format, mRgba is in RBGA format
-
-                //Todo: Do image processing stuff here
-                mRgba.convertTo(mRgba,-1,2,0);  // Increase intensity by 2
-
-                if (mIsColorSelected) {
-                    //Show the error-corrected color
-                    mBlobColorHsv = mDetector.get_new_hsvColor();
-                    mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
-
-                    //Debug
-                    Log.i(TAG, "mDetector rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
-                            ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
-                    Log.i(TAG, "mDetector hsv color: (" + mBlobColorHsv.val[0] + ", " + mBlobColorHsv.val[1] +
-                            ", " + mBlobColorHsv.val[2] + ", " + mBlobColorHsv.val[3] + ")");
-
-                    mDetector.process(mRgba);
-                    List<MatOfPoint> contours = mDetector.getContours();
-                    Log.e(TAG, "Contours count: " + contours.size());
-                    Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR,2);
-
-                    Mat colorLabel = mRgba.submat(4, 68, 4, 68);
-                    colorLabel.setTo(mBlobColorRgba);
-
-                    Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
-                    mSpectrum.copyTo(spectrumLabel);
                 }
-
-
-                Utils.matToBitmap(mRgba, frame_bmp);
-                Canvas canvas = mSurfaceView_Display.lockCanvas();
-                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-                canvas.drawBitmap(frame_bmp, new Rect(0, 0, frame_bmp.getWidth(), frame_bmp.getHeight()),
-                        new Rect((canvas.getWidth() - frame_bmp.getWidth()) / 2,
-                                (canvas.getHeight() - frame_bmp.getHeight()) / 2,
-                                (canvas.getWidth() - frame_bmp.getWidth()) / 2 + frame_bmp.getWidth(),
-                                (canvas.getHeight() - frame_bmp.getHeight()) / 2 + frame_bmp.getHeight()), null);
-                mSurfaceView_Display.unlockCanvasAndPost(canvas);
             }
         }).start();
     }
@@ -409,8 +365,8 @@ public class MainActivity extends Activity implements OnTouchListener, TextureVi
         int rows = mRgba.rows();        int cols = mRgba.cols();
 
 
-        int xOffset = (mSurfaceView_Display.getWidth() - cols) / 2;
-        int yOffset = (mSurfaceView_Display.getHeight() - rows) / 2;
+        int xOffset = (mSurfaceView.getWidth() - cols) / 2;
+        int yOffset = (mSurfaceView.getHeight() - rows) / 2;
 
         int x = (int)event.getX() - xOffset;
         int y = (int)event.getY() - yOffset;
