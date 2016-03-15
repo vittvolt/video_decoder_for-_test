@@ -41,6 +41,7 @@ import org.w3c.dom.Text;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -320,8 +321,22 @@ public class Main2Activity extends Activity implements OnTouchListener, TextureV
                 try {
                     socket = new Socket(eduroam_pc_ip, 8080);
                     dos = new DataOutputStream(socket.getOutputStream());
+
+                    //Send how many bytes to read for the image frame
+                    long size = byteArray.length;
+                    dos.writeLong(size);
+                    //Send information to server
+                    dos.writeInt(2);
+                    dos.writeInt(2);
+
+                    //Send Image
                     while ((i = bis.read()) > -1)
                         dos.write(i);
+
+                    //Receive Information
+                    DataInputStream dis = new DataInputStream(socket.getInputStream());
+                    dis.readInt();
+                    dis.readInt();
                 }
                 catch(Exception e){
                     e.printStackTrace();
